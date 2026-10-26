@@ -312,18 +312,19 @@ function updateHud() {
 }
 
 /* ---------- 7. WHAT HAPPENS WHEN A CARD IS CLICKED ---------- */
-
 function onCardClick(i) {
   if (!state.active || state.lock) return;      // blocked (game over / checking / preview)
   const card = state.cards[i];
   if (card.done || card.el.classList.contains("flipped")) return;
 
   card.el.classList.add("flipped");
+  sfx.flip();
 
   // --- special cards work right away ---
   if (card.type === "virus") {
     card.done = true;
     card.el.classList.add("virus", "locked");
+    sfx.virus();
     state.score = Math.max(0, state.score - PTS.virus);
     state.lives--;
     updateHud();
@@ -333,6 +334,7 @@ function onCardClick(i) {
   if (card.type === "bonus") {
     card.done = true;
     card.el.classList.add("bonus", "locked");
+    sfx.bonus();
     state.score += PTS.bonus;
     updateHud();
     return;
@@ -349,6 +351,7 @@ function onCardClick(i) {
     // MATCH
     [a, b].forEach(c => { c.done = true; c.el.classList.add("matched", "locked"); });
     state.score += PTS.match;
+    sfx.match();
     state.matched++;
     state.first = state.second = null;
     state.lock = false;
@@ -357,6 +360,7 @@ function onCardClick(i) {
   } else {
     // WRONG MATCH
     state.score = Math.max(0, state.score - PTS.wrong);
+    sfx.wrong();
     updateHud();
     const myRun = state.runId;
     setTimeout(() => {
@@ -391,6 +395,7 @@ function stopTimer() {
 /* ---------- 9. LEVEL CLEARED / GAME OVER / RESULTS ---------- */
 
 function levelCleared() {
+   sfx.win();
   stopTimer();
   state.active = false;
 
@@ -419,6 +424,7 @@ $("next-level-btn").addEventListener("click", () => {
 });
 
 function gameOver(reason) {
+   sfx.lose();
   stopTimer();
   state.active = false;
   state.lock = true;
@@ -538,3 +544,86 @@ $("play-again-btn").addEventListener("click", () => {
 });
 $("menu-btn").addEventListener("click", () => show("screen-home"));
 $("results-lb-btn").addEventListener("click", openLeaderboard);
+
+/* ---------- SOUNDS (made with code, no files needed) ---------- */
+let audioCtx = null;
+let soundOn = true;
+let musicTimer = null;
+
+function getCtx() {
+  if (!audioCtx) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return null;
+    audioCtx = new AC();
+  }
+  if (audioCtx.state === "suspended") audioCtx.resume();
+  return audioCtx;
+}
+
+// one short note: frequency, start delay (s), length (s), wave type, loudness
+function tone(freq, delay, dur, type, vol) {
+  if (!soundOn) return;
+  const ctx = getCtx();
+  if (!ctx) return;
+  const t = ctx.currentTime + delay;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = type || "sine";
+  osc.frequency.value = freq;
+  gain.gain.setValueAtTime(0.0001, t);
+  gain.gain.exponentialRampToValueAtTime(vol || 0.2, t + 0.02);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start(t);
+  osc.stop(t + dur + 0.05);
+}
+
+const sfx = {
+  click: () => tone(700, 0, 0.07, "triangle", 0.18),
+  flip:  () => tone(520, 0, 0.08, "triangle", 0.15),
+  match: () => { tone(660, 0, 0.12, "sine", 0.25); tone(880, 0.1, 0.2, "sine", 0.25); },
+  wrong: () => { tone(220, 0, 0.15, "sawtooth", 0.12); tone(180, 0.12, 0.2, "sawtooth", 0.12); },
+  virus: () => { tone(150, 0, 0.25, "square", 0.18); tone(110, 0.15, 0.35, "square", 0.18); },
+  bonus: () => { tone(784, 0, 0.1, "triangle", 0.25); tone(988, 0.08, 0.1, "triangle", 0.25); tone(1319, 0.16, 0.25, "triangle", 0.25); },
+  win:   () => { [523, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.12, 0.25, "triangle", 0.25)); },
+  lose:  () => { [392, 330, 262, 196].forEach((f, i) => tone(f, i * 0.2, 0.35, "sawtooth", 0.14)); }
+};
+
+// Soft background tune (loops forever). 0 = rest.
+const TUNE = [523,0,659,0,784,659,0,523, 587,0,698,0,880,698,0,587,
+              659,0,784,0,988,784,0,659, 523,0,659,784,1047,784,659,0];
+let tuneStep = 0;
+
+function startMusic() {
+  if (musicTimer || !soundOn) return;
+  getCtx();
+  musicTimer = setInterval(() => {
+    const f = TUNE[tuneStep % TUNE.length];
+    if (f) tone(f, 0, 0.28, "sine", 0.05);
+    tuneStep++;
+  }, 260);
+}
+function stopMusic() {
+  clearInterval(musicTimer);
+  musicTimer = null;
+}
+
+// music starts on the first click (browsers need a click first)
+$("start-btn").addEventListener("click", startMusic);
+
+$("mute-btn").addEventListener("click", () => {
+  soundOn = !soundOn;
+  if (soundOn) startMusic(); else stopMusic();
+  $("mute-btn").textContent = soundOn ? "🔊" : "🔇";
+});
+
+/* ---------- CLICK SOUND FOR ALL BUTTONS ---------- */
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest("button");
+  if (!btn) return;
+  if (btn.id === "mute-btn" || btn.classList.contains("card")) return;
+  getCtx();          // wake up the audio (browsers need a click first)
+  sfx.click();
+  startMusic();      // background tune starts on the first click
+});
