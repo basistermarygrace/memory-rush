@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Memory Rush: The Lost Files</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Drifting clouds in the background (decoration only) -->
+ <div class="sky" aria-hidden="true">
+  <div class="cloud c1"></div>
+  <div class="cloud c2"></div>
+  <div class="cloud c3"></div>
+  <div class="cloud c4"></div>
+  <div class="cloud c5"></div>
+  <div class="cloud c6"></div>
+  <div class="cloud c7"></div>
+  <div class="cloud c8"></div>
+</div>
+
+ <!-- ========== 1. HOME SCREEN ========== -->
+<main id="screen-home" class="screen active">
+  <div class="home-stack">
+
+    <!-- Curved title -->
+    <h1 class="title-wrap">
+      <svg class="title-svg" viewBox="0 0 400 130" role="img" aria-label="Memory Rush: The Lost Files">
+        <defs>
+          <path id="curve1" d="M 15 105 Q 200 5 385 105" />
+          <path id="curve2" d="M 90 118 Q 200 98 310 118" />
+        </defs>
+        <text class="t1" text-anchor="middle">
+          <textPath href="#curve1" startOffset="50%">MEMORY RUSH</textPath>
+        </text>
+        <text class="t2" text-anchor="middle">
+          <textPath href="#curve2" startOffset="50%">THE LOST FILES</textPath>
+        </text>
+      </svg>
+    </h1>
+    <p class="tagline">Recover the files. Beat the clock. Top the leaderboard.</p>
+
+    <!-- Box 1: name + play -->
+    <div class="panel">
+      <p class="intro">
+        You are a file recovery specialist. Match the pairs and bring the lost files back from the cloud!
+      </p>
+      <label for="player-name" class="label">Your name</label>
+      <input id="player-name" type="text" maxlength="20" placeholder="Enter your name" autocomplete="off" />
+      <p id="name-error" class="error" role="alert"></p>
+      <button id="start-btn" class="btn btn-primary glow">▶ Play</button>
+    </div>
+
+    <!-- Box 2: menu -->
+    <div class="panel menu-box">
+      <button id="instructions-btn" class="btn btn-secondary">❓ How to Play</button>
+      <button id="leaderboard-btn" class="btn btn-secondary">🏆 Leaderboard</button>
+    </div>
+
+  </div>
+</main>
+
+<!-- ========== DIFFICULTY SCREEN ========== -->
+<main id="screen-difficulty" class="screen">
+  <div class="panel">
+    <h2>Choose difficulty</h2>
+ <p class="intro">Hi, <b id="diff-player">Player</b>! Finish a difficulty to unlock the next one.</p>
+    <div class="diff-group" id="diff-group">
+     <button class="diff-btn selected" data-diff="easy">Easy<small>Slow flip-back · fewest viruses</small></button>
+<button class="diff-btn" data-diff="medium">Medium<small>Faster flip-back · some viruses</small></button>
+<button class="diff-btn" data-diff="hard">Hard<small>Fast flip-back · many viruses</small></button>
+<button class="diff-btn" data-diff="expert">Expert<small>Fastest · most viruses</small></button>
+    </div>
+    <button id="begin-btn" class="btn btn-primary glow">▶ Start Game</button>
+    <button id="diff-back-btn" class="btn btn-secondary back-btn">⬅ Back</button>
+  </div>
+</main>
+
+  <!-- ========== 2. INSTRUCTIONS SCREEN ========== -->
+  <main id="screen-instructions" class="screen">
+    <div class="panel">
+      <h2>How to Play</h2>
+      <ul class="rules">
+        <li>🃏 Flip <b>two cards</b> at a time. Same picture = a match!</li>
+        <li>✅ Correct match: <b>+10</b>. Wrong match: <b>-2</b> (score never goes below 0).</li>
+        <li>❤️ You have <b>3 lives</b> in every level.</li>
+        <li>🦠 <b>Virus card</b>: -10 points and lose 1 life (starts in Level 2).</li>
+        <li>⭐ <b>Bonus card</b>: +20 points (starts in Level 3).</li>
+        <li>⏱️ Level 3 and the Final Challenge have a <b>timer</b>.</li>
+        <li>🏁 At the end: <b>+25</b> per life left and <b>+1</b> per second left.</li>
+        <li>🎖️ Ranks: File Rookie, File Hunter, Memory Agent, Memory Master.</li>
+      </ul>
+      <button class="btn btn-primary" id="instructions-ok">Got it!</button>
+    </div>
+  </main>
+
+  <!-- ========== 3. GAMEPLAY SCREEN ========== -->
+  <main id="screen-game" class="screen">
+    <div class="game">
+      <div class="hud">
+        <div class="hud-item">Level <b id="hud-level">1</b></div>
+        <div class="hud-item"><b id="hud-diff">Easy</b></div>
+        <div class="hud-item">👤 <b id="hud-player">Player</b></div>
+        <div class="hud-item">Score <b id="hud-score">0</b></div>
+        <div class="hud-item" id="hud-lives" aria-label="Lives">❤️❤️❤️</div>
+        <div class="hud-item">Pairs <b id="hud-pairs">0/0</b></div>
+        <div class="hud-item hidden" id="hud-timer-box">⏱️ <b id="hud-timer">0</b>s</div>
+        <button id="restart-btn" class="btn btn-small">↻ Restart</button>
+      </div>
+
+      <div id="file-banner" class="banner">📄 Recovering: file.doc</div>
+
+      <div class="board-wrap">
+        <div id="board" class="board" aria-label="Card board"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ========== 4. BETWEEN LEVELS ========== -->
+  <main id="screen-between" class="screen">
+    <div class="panel">
+      <h2 id="between-title">Level cleared! 🎉</h2>
+      <p id="between-info" class="intro"></p>
+      <button id="next-level-btn" class="btn btn-primary glow">Next Level ▶</button>
+    </div>
+  </main>
+
+  <!-- ========== 5. RESULTS ========== -->
+  <main id="screen-results" class="screen">
+    <div class="panel">
+      <h2 id="result-heading">Result</h2>
+      <p id="result-rank" class="rank"></p>
+      <table class="result-table">
+        <tr><td>Name</td><td id="res-name"></td></tr>
+        <tr><td>Final score</td><td id="res-score"></td></tr>
+        <tr><td>Difficulty</td><td id="res-diff"></td></tr>
+        <tr><td>Time</td><td id="res-time"></td></tr>
+        <tr><td>Highest level</td><td id="res-level"></td></tr>
+        <tr><td>Outcome</td><td id="res-outcome"></td></tr>
+      </table>
+      <p id="submit-status" class="status"></p>
+      <div class="row">
+        <button id="play-again-btn" class="btn btn-primary">Play Again</button>
+        <button id="menu-btn" class="btn btn-secondary">Main Menu</button>
+        <button id="results-lb-btn" class="btn btn-secondary">🏆 Leaderboard</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- ========== 6. LEADERBOARD ========== -->
+  <main id="screen-leaderboard" class="screen">
+    <div class="panel wide">
+      <h2>🏆 Leaderboard</h2>
+      <p id="lb-message" class="status">Loading...</p>
+      <div class="table-scroll">
+        <table class="lb-table">
+          <thead>
+            <tr>
+              <th>#</th><th>Name</th><th>Score</th><th>Difficulty</th><th>Level</th><th>Date</th>
+            </tr>
+          </thead>
+          <tbody id="lb-body"></tbody>
+        </table>
+      </div>
+      <button id="lb-back-btn" class="btn btn-primary">⬅ Back</button>
+    </div>
+  </main>
+
+  <!-- ========== POPUP (tutorial + messages) ========== -->
+  <div id="modal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-box">
+      <h3 id="modal-title">Title</h3>
+      <p id="modal-text">Text</p>
+      <button id="modal-ok" class="btn btn-primary">OK</button>
+    </div>
+  </div>
+
+  <!-- Supabase library from CDN, then our files (order matters!) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
